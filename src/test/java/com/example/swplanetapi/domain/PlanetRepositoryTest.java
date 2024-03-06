@@ -7,9 +7,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -43,13 +47,25 @@ public class PlanetRepositoryTest {
         assertThat(sut.getTerrain()).isEqualTo(PLANET.getTerrain());
     }
 
-    @Test
-    public void createPlanet_WithInvalidData_ThrowsException() {
-        Planet emptyPlanet = new Planet();
-        Planet invalidPlanet = new Planet("", "", "");
+    @ParameterizedTest
+    @MethodSource("providesInvalididPlanets")
+    public void createPlanet_WithInvalidData_ThrowsException(Planet planet) {
+        assertThatThrownBy(() -> planetRepository.save(planet)).isInstanceOf(RuntimeException.class);
+    }
 
-        assertThatThrownBy(() -> planetRepository.save(emptyPlanet)).isInstanceOf(RuntimeException.class);
-        assertThatThrownBy(() -> planetRepository.save(invalidPlanet)).isInstanceOf(RuntimeException.class);
+    private static Stream<Arguments> providesInvalididPlanets() {
+        return Stream.of(
+            Arguments.of(new Planet(null, "temperate", "grasslands, mountains")),
+            Arguments.of(new Planet("Alderaan", null, "grasslands, mountains")),
+            Arguments.of(new Planet("Alderaan", "temperate", null)),
+            Arguments.of(new Planet(null, null, "grasslands, mountains")),
+            Arguments.of(new Planet(null, "temperate", null),
+            Arguments.of(new Planet("Alderaan", null, null)),
+            Arguments.of(new Planet(null, null, null)),
+            Arguments.of(new Planet("", "temperate", "grasslands, mountains")),
+            Arguments.of(new Planet("Alderaan", "", "grasslands, mountains")),
+            Arguments.of(new Planet("Alderaan", "temperate", ""))
+        ));
     }
 
     @Test
